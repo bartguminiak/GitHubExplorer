@@ -1,34 +1,149 @@
-# GitHub Explorer
+# GitHubExplorer
 
-A lightweight iOS application built with **SwiftUI**, **Swift 6**, and **MVVM**, using the public GitHub REST API.
+A lightweight iOS application built to explore **modern Swift Concurrency**, SwiftUI, and testable application architecture.
 
-The project explores modern iOS development practices, with a focus on Swift Concurrency, clean architecture, dependency injection, and automated testing.
+The project demonstrates practical concurrency patterns, including actor isolation, structured concurrency, task cancellation, request deduplication, and asynchronous networking.
+
+> **Project status:** Work in progress. This is a learning and technical demonstration project, not a production-ready GitHub client.
+
+## Features
+
+- Search public GitHub repositories using the GitHub REST API.
+- Browse repository details, including repository name and star count.
+- Debounced search input to reduce unnecessary network requests.
+- Cancellation-aware asynchronous operations.
+- Protection against outdated search responses.
+- In-memory repository caching using Swift actors.
+- Deduplication of concurrent repository detail requests.
+- Concurrent batch fetching using `TaskGroup`.
+- Loading, empty, and error states.
 
 ## Tech Stack
 
-- **SwiftUI** — Declarative user interface
-- **Swift 6** — Modern concurrency and actor isolation
-- **MVVM** — Separation of presentation and business logic
-- **async/await** — Asynchronous networking with URLSession
-- **Observation** — State management using `@Observable`
-- **Swift Testing** — Unit testing with mocked dependencies
+| Area | Technology |
+|---|---|
+| Language | Swift 6 |
+| UI | SwiftUI |
+| Architecture | MVVM |
+| State management | Observation (`@Observable`) |
+| Concurrency | async/await, actors, Task, TaskGroup |
+| Networking | URLSession, GitHub REST API |
+| Dependency injection | Protocol-based |
+| Testing | Swift Testing |
+| Dependencies | No third-party dependencies |
 
-## Current Features
+## Architecture
 
-- Fetch and display a public GitHub repository
-- Handle loading, success, and error states
-- Decode REST API responses using `Codable`
-- Test networking and ViewModel logic without external API calls
+The application uses a lightweight, feature-oriented MVVM architecture with clear separation between presentation, business logic, and networking.
+
+```text
+GitHubExplorer/
+├── App/
+│   ├── GitHubExplorerApp.swift
+│   └── AppDependencies.swift
+├── Features/
+│   ├── Search/
+│   │   ├── Views/
+│   │   └── ViewModels/
+│   └── Repository/
+│       ├── Views/
+│       └── ViewModels/
+├── Models/
+└── Networking/
+    ├── HTTPClient.swift
+    ├── GitHubAPIClient.swift
+    ├── GitHubRepositoryProviding.swift
+    └── CachingRepositoryProvider.swift
+```
+
+The networking layer uses protocol-based abstractions, allowing API implementations to be replaced with test doubles without modifying the ViewModels.
+
+## Swift Concurrency
+
+Concurrency is the primary technical focus of this project.
+
+### MainActor and UI State
+
+ViewModels use `@MainActor` isolation to protect observable UI state and keep state updates consistent.
+
+### Debouncing and Cancellation
+
+Repository search uses SwiftUI's `.task(id:)` lifecycle with a debounce interval to reduce unnecessary API calls.
+
+Request identifiers help prevent older asynchronous responses from overwriting newer results.
+
+### Actor-Based Caching
+
+`CachingRepositoryProvider` uses an actor to isolate its in-memory cache and track ongoing requests.
+
+Concurrent requests for the same repository can share an in-flight operation rather than always initiating separate HTTP requests.
+
+The current implementation is intentionally lightweight; complete shared-request cancellation management remains outside its scope.
+
+### Structured Concurrency
+
+Batch repository fetching demonstrates `withThrowingTaskGroup`, allowing a dynamic collection of repositories to be fetched concurrently.
+
+The implementation illustrates the distinction between structured child tasks and unstructured tasks.
+
+## Testing
+
+The project uses **Swift Testing** with injected mock implementations.
+
+Tests cover:
+
+- JSON decoding and API response handling.
+- Successful and failed network requests.
+- ViewModel loading, success, and error states.
+- Search input validation.
+- Out-of-order asynchronous responses.
+- Cancellation behavior.
+- Repository caching.
+- Concurrent batch fetching.
+
+Controlled continuations are used in concurrency tests to simulate asynchronous operations and verify their behavior without relying on arbitrary delays.
 
 ## Getting Started
 
+### Requirements
+
+- Xcode 27.2 or later
+- iOS 17.0 or later
+- Swift 6
+
+### Run
+
 1. Clone the repository.
-2. Open `GitHubExplorer.xcodeproj` in Xcode 27.2 or later.
-3. Select an iOS 17+ simulator and run the application.
-4. Run unit tests using `Cmd + U`.
+2. Open `GitHubExplorer.xcodeproj` in Xcode.
+3. Select an iOS simulator.
+4. Build and run the application.
 
-No API key or third-party dependencies are required.
+The application uses GitHub's public REST API. **No API key or third-party dependencies are required** for basic usage.
 
-## Project Status
+Unauthenticated GitHub API requests are subject to rate limits.
 
-**Work in progress.** The application is being developed incrementally to explore modern SwiftUI architecture, structured concurrency, and testable iOS code.
+### Run Tests
+
+Use **Product → Test** in Xcode or press `Cmd + U`.
+
+The tests use mock networking components and do not require live GitHub API access.
+
+## Known Limitations
+
+- Search error handling and user-facing error messages need refinement.
+- GitHub API rate limits may affect unauthenticated requests.
+- Shared in-flight request cancellation is not fully implemented.
+- Repository caching is in-memory only and does not persist across application launches.
+- Batch fetching is demonstrated at the networking layer and is not exposed as a separate UI feature.
+
+## Project Goals
+
+This project is designed to demonstrate and reinforce:
+
+- Swift 6 concurrency fundamentals and actor isolation.
+- Safe asynchronous state management in SwiftUI.
+- Dependency injection and testable architecture.
+- Deterministic testing of concurrent operations.
+- Practical trade-offs between implementation simplicity and production-level robustness.
+
+The emphasis is on **code clarity, concurrency correctness, and engineering decisions**, rather than feature completeness.
