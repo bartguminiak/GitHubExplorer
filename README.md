@@ -22,7 +22,7 @@ The project demonstrates practical concurrency patterns, including actor isolati
 
 | Area | Technology |
 |---|---|
-| Language | Swift 6 |
+| Language | Swift 6 (application and test targets) |
 | UI | SwiftUI |
 | Architecture | MVVM |
 | State management | Observation (`@Observable`) |
@@ -42,12 +42,9 @@ GitHubExplorer/
 │   ├── GitHubExplorerApp.swift
 │   └── AppDependencies.swift
 ├── Features/
-│   ├── Search/
-│   │   ├── Views/
-│   │   └── ViewModels/
 │   └── Repository/
-│       ├── Views/
-│       └── ViewModels/
+│       ├── Views/          # Search and repository views
+│       └── ViewModels/     # Search and repository ViewModels
 ├── Models/
 └── Networking/
     ├── HTTPClient.swift
@@ -99,7 +96,9 @@ Tests cover:
 - Out-of-order asynchronous responses.
 - Cancellation behavior.
 - Repository caching.
-- Concurrent batch fetching.
+- Batch fetching result and request counts.
+
+The current tests do not verify that batch requests overlap in time or that concurrent detail requests share an in-flight operation. Cancellation coverage currently applies to the search ViewModel.
 
 Controlled continuations are used in concurrency tests to simulate asynchronous operations and verify their behavior without relying on arbitrary delays.
 
@@ -108,8 +107,8 @@ Controlled continuations are used in concurrency tests to simulate asynchronous 
 ### Requirements
 
 - Xcode 27.2 or later
-- iOS 17.0 or later
-- Swift 6
+- iOS 17.6 or later (application and test targets)
+- Swift 6 language mode for both application and test targets
 
 ### Run
 
@@ -132,8 +131,10 @@ The tests use mock networking components and do not require live GitHub API acce
 
 - Search error handling and user-facing error messages need refinement.
 - GitHub API rate limits may affect unauthenticated requests.
+- Search returns only the first page of up to 20 repositories; pagination is not implemented. The API's total result count and incomplete-results flag are decoded but are not exposed to the UI.
 - Shared in-flight request cancellation is not fully implemented.
 - Repository caching is in-memory only and does not persist across application launches.
+- Cached repository details have no expiration or explicit refresh. Search bypasses this cache, so search results and cached details can show different star counts during a session.
 - Batch fetching is demonstrated at the networking layer and is not exposed as a separate UI feature.
 
 ## Project Goals
