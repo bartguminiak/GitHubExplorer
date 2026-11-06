@@ -2,6 +2,10 @@ import Foundation
 @testable import GitHubExplorer
 
 actor ControlledRepositoryProvider: GitHubRepositoryProviding {
+    func searchRepositories(query: String) async throws -> [GitHubExplorer.GitHubRepository] {
+        []
+    }
+    
 
     private var pending: [
         String: CheckedContinuation<GitHubRepository, Error>

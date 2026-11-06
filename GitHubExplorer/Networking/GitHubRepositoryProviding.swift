@@ -5,6 +5,10 @@ nonisolated protocol GitHubRepositoryProviding: Sendable {
         owner: String,
         name: String
     ) async throws -> GitHubRepository
+    
+    func searchRepositories(
+        query: String
+    ) async throws -> [GitHubRepository]
 }
 
 extension GitHubAPIClient: GitHubRepositoryProviding {}
