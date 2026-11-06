@@ -20,7 +20,7 @@ struct RepositoryListView: View {
                     } actions: {
                         Button("Retry") {
                             Task {
-                                await viewModel.loadRepository()
+                                await viewModel.loadRepository(owner: "apple", name: "swift")
                             }
                         }
                     }
@@ -33,7 +33,7 @@ struct RepositoryListView: View {
             }
             .navigationTitle("GitHub Explorer")
             .task {
-                await viewModel.loadRepository()
+                await viewModel.loadRepository(owner: "apple", name: "swift")
             }
         }
     }

@@ -2,9 +2,19 @@ import SwiftUI
 
 struct SearchView: View {
 
-    @State private var viewModel = SearchViewModel(
-        repositoryProvider: GitHubAPIClient()
-    )
+    init(repositoryProvider: any GitHubRepositoryProviding) {
+        _viewModel = State(
+            initialValue: SearchViewModel(
+                repositoryProvider: repositoryProvider
+            )
+        )
+
+        self.repositoryProvider = repositoryProvider
+    }
+    
+    @State private var viewModel: SearchViewModel
+    
+    private let repositoryProvider: any GitHubRepositoryProviding
 
     @State private var searchText = ""
 
@@ -23,16 +33,24 @@ struct SearchView: View {
                     ContentUnavailableView.search(text: searchText)
                 } else {
                     List(viewModel.repositories) { repository in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(repository.fullName)
-                                .font(.headline)
-
-                            Label(
-                                repository.stars.formatted(),
-                                systemImage: "star"
+                        NavigationLink {
+                            RepositoryDetailView(
+                                owner: String(repository.fullName.split(separator: "/")[0]),
+                                name: repository.name,
+                                repositoryProvider: repositoryProvider
                             )
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(repository.fullName)
+                                    .font(.headline)
+
+                                Label(
+                                    repository.stars.formatted(),
+                                    systemImage: "star"
+                                )
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }

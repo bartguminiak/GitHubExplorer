@@ -21,7 +21,7 @@ struct RepositoryViewModelTests {
             repositoryProvider: provider
         )
         
-        await viewModel.loadRepository()
+        await viewModel.loadRepository(owner: "apple", name: "swift")
         
         #expect(viewModel.repository?.id == 123)
         #expect(viewModel.repository?.name == "swift")
@@ -41,7 +41,7 @@ struct RepositoryViewModelTests {
             repositoryProvider: provider
         )
         
-        await viewModel.loadRepository()
+        await viewModel.loadRepository(owner: "apple", name: "swift")
         
         #expect(viewModel.repository == nil)
         #expect(viewModel.isLoading == false)
@@ -70,13 +70,13 @@ struct RepositoryViewModelTests {
         )
         
         let firstTask = Task {
-            await viewModel.loadRepository(name: "swift")
+            await viewModel.loadRepository(owner: "apple", name: "swift")
         }
 
         await provider.waitUntilRequested("swift")
 
         let secondTask = Task {
-            await viewModel.loadRepository(name: "swiftui")
+            await viewModel.loadRepository(owner: "apple", name: "swiftui")
         }
 
         await provider.waitUntilRequested("swiftui")

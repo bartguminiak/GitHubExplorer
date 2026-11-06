@@ -26,7 +26,7 @@ final class RepositoryViewModel {
         loadTask?.cancel()
         
         loadTask = Task {
-            await loadRepository(name: name)
+            await loadRepository(owner: name, name: "")
         }
     }
     
@@ -35,7 +35,7 @@ final class RepositoryViewModel {
         loadTask = nil
     }
 
-    func loadRepository(name: String = "swift") async {
+    func loadRepository(owner: String, name: String) async {
         let requestID = UUID()
         latestRequestID = requestID
 
@@ -50,7 +50,7 @@ final class RepositoryViewModel {
 
         do {
             let result = try await repositoryProvider.fetchRepository(
-                owner: "apple",
+                owner: owner,
                 name: name
             )
             
