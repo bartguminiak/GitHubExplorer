@@ -21,22 +21,6 @@ final class RepositoryViewModel {
     init(repositoryProvider: any GitHubRepositoryProviding) {
         self.repositoryProvider = repositoryProvider
     }
-    
-    @discardableResult
-    func startLoading(owner: String, name: String) -> Task<Void, Never> {
-        loadTask?.cancel()
-        
-        let task = Task {
-            await loadRepository(owner: owner, name: name)
-        }
-        loadTask = task
-        return task
-    }
-    
-    func cancelLoading() {
-        loadTask?.cancel()
-        loadTask = nil
-    }
 
     func loadRepository(owner: String, name: String) async {
         let requestID = UUID()

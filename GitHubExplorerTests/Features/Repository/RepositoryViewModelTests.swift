@@ -4,14 +4,6 @@ import Testing
 
 @MainActor
 struct RepositoryViewModelTests {
-    
-    @Test
-    func startLoadingPassesOwnerAndName() async {
-        let model = RepositoryViewModel(repositoryProvider: ArgumentCheckingProvider())
-        await model.startLoading(owner: "swiftlang", name: "swift").value
-        #expect(model.repository?.fullName == "swiftlang/swift")
-        #expect(model.errorMessage == nil)
-    }
 
     @Test
     func cancelledLoadDoesNotDisplayNetworkError() async {
