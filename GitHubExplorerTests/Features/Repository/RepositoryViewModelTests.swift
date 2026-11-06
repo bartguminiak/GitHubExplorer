@@ -1,9 +1,30 @@
+import Foundation
 import Testing
 @testable import GitHubExplorer
 
 @MainActor
 struct RepositoryViewModelTests {
     
+    @Test
+    func startLoadingPassesOwnerAndName() async {
+        let model = RepositoryViewModel(repositoryProvider: ArgumentCheckingProvider())
+        await model.startLoading(owner: "swiftlang", name: "swift").value
+        #expect(model.repository?.fullName == "swiftlang/swift")
+        #expect(model.errorMessage == nil)
+    }
+
+    @Test
+    func cancelledLoadDoesNotDisplayNetworkError() async {
+        let model = RepositoryViewModel(repositoryProvider: CancellingProvider())
+        let task = Task {
+            await model.loadRepository(owner: "swiftlang", name: "swift")
+        }
+        await task.value
+        #expect(model.errorMessage == nil)
+        #expect(model.isLoading == false)
+        #expect(model.repository == nil)
+    }
+
     @Test
     func loadRepositoryUpdatesState() async throws {
         let expected = GitHubRepository(
@@ -97,4 +118,23 @@ struct RepositoryViewModelTests {
 
         #expect(viewModel.repository?.id == newRepository.id)
     }
+}
+
+private nonisolated struct ArgumentCheckingProvider: GitHubRepositoryProviding {
+    func fetchRepository(owner: String, name: String) async throws -> GitHubRepository {
+        #expect(owner == "swiftlang")
+        #expect(name == "swift")
+        return GitHubRepository(id: 1, name: name, fullName: "\(owner)/\(name)", stars: 100)
+    }
+
+    func searchRepositories(query: String) async throws -> [GitHubRepository] { [] }
+}
+
+private nonisolated struct CancellingProvider: GitHubRepositoryProviding {
+    func fetchRepository(owner: String, name: String) async throws -> GitHubRepository {
+        withUnsafeCurrentTask { $0?.cancel() }
+        throw URLError(.cancelled)
+    }
+
+    func searchRepositories(query: String) async throws -> [GitHubRepository] { [] }
 }

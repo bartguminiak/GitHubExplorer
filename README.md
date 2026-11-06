@@ -98,7 +98,7 @@ Tests cover:
 - Repository caching.
 - Batch fetching result and request counts.
 
-The current tests do not verify that batch requests overlap in time or that concurrent detail requests share an in-flight operation. Cancellation coverage currently applies to the search ViewModel.
+The current tests do not verify that batch requests overlap in time or that concurrent detail requests share an in-flight operation. Cancellation coverage applies to both search and repository ViewModels. Tests also cover loading arguments and refetching expired cache entries.
 
 Controlled continuations are used in concurrency tests to simulate asynchronous operations and verify their behavior without relying on arbitrary delays.
 
@@ -134,7 +134,7 @@ The tests use mock networking components and do not require live GitHub API acce
 - Search returns only the first page of up to 20 repositories; pagination is not implemented. The API's total result count and incomplete-results flag are decoded but are not exposed to the UI.
 - Shared in-flight request cancellation is not fully implemented.
 - Repository caching is in-memory only and does not persist across application launches.
-- Cached repository details have no expiration or explicit refresh. Search bypasses this cache, so search results and cached details can show different star counts during a session.
+- Cached repository details expire after 60 seconds and are refreshed on the next fetch. Search bypasses this cache, so star counts can temporarily differ. Already displayed details do not update automatically.
 - Batch fetching is demonstrated at the networking layer and is not exposed as a separate UI feature.
 
 ## Project Goals

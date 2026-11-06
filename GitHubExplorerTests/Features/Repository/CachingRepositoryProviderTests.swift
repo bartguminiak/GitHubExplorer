@@ -5,6 +5,16 @@ import Testing
 struct CachingRepositoryProviderTests {
 
     @Test
+    func expiredEntryFetchesUpdatedRepository() async throws {
+        let provider = UpdatingRepositoryProvider()
+        let cache = CachingRepositoryProvider(wrapping: provider, cacheLifetime: 0)
+        let first = try await cache.fetchRepository(owner: "apple", name: "swift")
+        let second = try await cache.fetchRepository(owner: "apple", name: "swift")
+        #expect(first.stars == 1)
+        #expect(second.stars == 2)
+    }
+
+    @Test
     func returnsCachedRepository() async throws {
         let repository = GitHubRepository(
             id: 1,
@@ -59,4 +69,15 @@ actor CountingRepositoryProvider: GitHubRepositoryProviding {
         []
     }
 
+}
+
+private actor UpdatingRepositoryProvider: GitHubRepositoryProviding {
+    private var count = 0
+
+    func fetchRepository(owner: String, name: String) async throws -> GitHubRepository {
+        count += 1
+        return GitHubRepository(id: 1, name: name, fullName: "\(owner)/\(name)", stars: count)
+    }
+
+    func searchRepositories(query: String) async throws -> [GitHubRepository] { [] }
 }

@@ -10,8 +10,6 @@ struct RepositoryListView: View {
             Group {
                 if viewModel.isLoading {
                     ProgressView("Loading repository...")
-                } else if let repository = viewModel.repository {
-                    repositoryContent(repository)
                 } else if let errorMessage = viewModel.errorMessage {
                     ContentUnavailableView {
                         Label("Something went wrong", systemImage: "exclamationmark.triangle")
@@ -24,6 +22,8 @@ struct RepositoryListView: View {
                             }
                         }
                     }
+                } else if let repository = viewModel.repository {
+                    repositoryContent(repository)
                 } else {
                     ContentUnavailableView(
                         "No repository",

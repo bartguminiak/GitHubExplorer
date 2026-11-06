@@ -22,12 +22,15 @@ final class RepositoryViewModel {
         self.repositoryProvider = repositoryProvider
     }
     
-    func startLoading(name: String = "swift") {
+    @discardableResult
+    func startLoading(owner: String, name: String) -> Task<Void, Never> {
         loadTask?.cancel()
         
-        loadTask = Task {
-            await loadRepository(owner: name, name: "")
+        let task = Task {
+            await loadRepository(owner: owner, name: name)
         }
+        loadTask = task
+        return task
     }
     
     func cancelLoading() {
@@ -66,7 +69,7 @@ final class RepositoryViewModel {
             return
 
         } catch {
-            guard latestRequestID == requestID else {
+            guard latestRequestID == requestID, !Task.isCancelled else {
                 return
             }
 
