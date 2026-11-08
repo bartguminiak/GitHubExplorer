@@ -14,9 +14,6 @@ final class RepositoryViewModel {
 
     @ObservationIgnored
     private var latestRequestID: UUID?
-    
-    @ObservationIgnored
-    private var loadTask: Task<Void, Never>?
 
     init(repositoryProvider: any GitHubRepositoryProviding) {
         self.repositoryProvider = repositoryProvider

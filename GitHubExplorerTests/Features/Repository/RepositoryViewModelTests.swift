@@ -112,16 +112,6 @@ struct RepositoryViewModelTests {
     }
 }
 
-private nonisolated struct ArgumentCheckingProvider: GitHubRepositoryProviding {
-    func fetchRepository(owner: String, name: String) async throws -> GitHubRepository {
-        #expect(owner == "swiftlang")
-        #expect(name == "swift")
-        return GitHubRepository(id: 1, name: name, fullName: "\(owner)/\(name)", stars: 100)
-    }
-
-    func searchRepositories(query: String) async throws -> [GitHubRepository] { [] }
-}
-
 private nonisolated struct CancellingProvider: GitHubRepositoryProviding {
     func fetchRepository(owner: String, name: String) async throws -> GitHubRepository {
         withUnsafeCurrentTask { $0?.cancel() }
