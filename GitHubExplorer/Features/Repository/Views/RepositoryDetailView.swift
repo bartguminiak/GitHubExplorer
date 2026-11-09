@@ -58,3 +58,69 @@ struct RepositoryDetailView: View {
     }
     
 }
+
+#if DEBUG
+private nonisolated struct PreviewRepositoryProvider: GitHubRepositoryProviding {
+    enum State: Sendable {
+        case loading
+        case success
+        case failure
+    }
+
+    let state: State
+
+    func fetchRepository(owner: String, name: String) async throws -> GitHubRepository {
+        switch state {
+        case .loading:
+            while true {
+                try await Task.sleep(for: .seconds(60))
+            }
+            return .init(id: 0, name: "", fullName: "", stars: 0)
+        case .success:
+            return GitHubRepository(
+                id: 1,
+                name: name,
+                fullName: "\(owner)/\(name)",
+                stars: 68_000
+            )
+        case .failure:
+            throw URLError(.notConnectedToInternet)
+        }
+    }
+
+    func searchRepositories(query: String) async throws -> GitHubSearchResponse {
+        let repository = try await fetchRepository(owner: "swiftlang", name: "swift")
+        return GitHubSearchResponse(totalCount: 1, items: [repository])
+    }
+}
+
+#Preview("Loading") {
+    NavigationStack {
+        RepositoryDetailView(
+            owner: "swiftlang",
+            name: "swift",
+            repositoryProvider: PreviewRepositoryProvider(state: .loading)
+        )
+    }
+}
+
+#Preview("Success") {
+    NavigationStack {
+        RepositoryDetailView(
+            owner: "swiftlang",
+            name: "swift",
+            repositoryProvider: PreviewRepositoryProvider(state: .success)
+        )
+    }
+}
+
+#Preview("Error") {
+    NavigationStack {
+        RepositoryDetailView(
+            owner: "swiftlang",
+            name: "swift",
+            repositoryProvider: PreviewRepositoryProvider(state: .failure)
+        )
+    }
+}
+#endif

@@ -87,3 +87,65 @@ struct SearchView: View {
         }
     }
 }
+#if DEBUG
+private extension SearchView {
+    init(previewState: PreviewSearchRepositoryProvider.State) {
+        self.init(repositoryProvider: PreviewSearchRepositoryProvider(state: previewState))
+        _searchText = State(initialValue: "swift")
+    }
+}
+
+private nonisolated struct PreviewSearchRepositoryProvider: GitHubRepositoryProviding {
+    enum State: Sendable {
+        case loading
+        case success
+        case failure
+    }
+
+    let state: State
+
+    private static let repositories = [
+        GitHubRepository(id: 1, name: "swift", fullName: "swiftlang/swift", stars: 68_000),
+        GitHubRepository(id: 2, name: "swift-testing", fullName: "swiftlang/swift-testing", stars: 2_500),
+        GitHubRepository(id: 3, name: "swift-syntax", fullName: "swiftlang/swift-syntax", stars: 3_500)
+    ]
+
+    func fetchRepository(owner: String, name: String) async throws -> GitHubRepository {
+        guard let repository = Self.repositories.first(where: {
+            $0.fullName == "\(owner)/\(name)"
+        }) else {
+            throw GitHubAPIError.httpError(statusCode: 404)
+        }
+        return repository
+    }
+
+    func searchRepositories(query: String) async throws -> GitHubSearchResponse {
+        switch state {
+        case .loading:
+            while true {
+                try await Task.sleep(for: .seconds(60))
+            }
+            return .init(totalCount: 0, items: [])
+        case .success:
+            let items = Self.repositories.filter {
+                $0.fullName.localizedCaseInsensitiveContains(query)
+            }
+            return GitHubSearchResponse(totalCount: items.count, items: items)
+        case .failure:
+            throw URLError(.notConnectedToInternet)
+        }
+    }
+}
+
+#Preview("Loading") {
+    SearchView(previewState: .loading)
+}
+
+#Preview("Success") {
+    SearchView(previewState: .success)
+}
+
+#Preview("Error") {
+    SearchView(previewState: .failure)
+}
+#endif
