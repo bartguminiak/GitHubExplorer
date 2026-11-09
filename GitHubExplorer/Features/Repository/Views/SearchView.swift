@@ -32,24 +32,27 @@ struct SearchView: View {
                 } else if viewModel.repositories.isEmpty {
                     ContentUnavailableView.search(text: searchText)
                 } else {
-                    List(viewModel.repositories) { repository in
-                        NavigationLink {
-                            RepositoryDetailView(
-                                owner: String(repository.fullName.split(separator: "/")[0]),
-                                name: repository.name,
-                                repositoryProvider: repositoryProvider
-                            )
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(repository.fullName)
-                                    .font(.headline)
-
-                                Label(
-                                    repository.stars.formatted(),
-                                    systemImage: "star"
+                    VStack {
+                        SearchResultsHeader(totalCount: viewModel.totalCount)
+                        List(viewModel.repositories) { repository in
+                            NavigationLink {
+                                RepositoryDetailView(
+                                    owner: String(repository.fullName.split(separator: "/")[0]),
+                                    name: repository.name,
+                                    repositoryProvider: repositoryProvider
                                 )
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(repository.fullName)
+                                        .font(.headline)
+
+                                    Label(
+                                        repository.stars.formatted(),
+                                        systemImage: "star"
+                                    )
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }

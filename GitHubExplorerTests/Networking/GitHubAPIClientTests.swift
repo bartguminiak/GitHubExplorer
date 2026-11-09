@@ -175,10 +175,10 @@ struct GitHubClientTests {
     }
     
     @Test
-    func searchRepositoriesReturnsDecodedItems() async throws {
+    func searchRepositoriesReturnsDecodedItemsAndTotalCount() async throws {
         let json = """
         {
-            "total_count": 1,
+            "total_count": 42,
             "incomplete_results": false,
             "items": [
                 {
@@ -205,13 +205,14 @@ struct GitHubClientTests {
         
         let client = GitHubAPIClient(httpClient: mock)
         
-        let repositories = try await client.searchRepositories(
+        let responseData = try await client.searchRepositories(
             query: "swift"
         )
         
-        #expect(repositories.count == 1)
-        #expect(repositories.first?.name == "swift")
-        #expect(repositories.first?.stars == 70000)
+        #expect(responseData.totalCount == 42)
+        #expect(responseData.items.count == 1)
+        #expect(responseData.items.first?.name == "swift")
+        #expect(responseData.items.first?.stars == 70000)
     }
     
 }

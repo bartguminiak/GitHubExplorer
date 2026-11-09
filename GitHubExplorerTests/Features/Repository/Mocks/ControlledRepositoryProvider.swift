@@ -2,8 +2,8 @@ import Foundation
 @testable import GitHubExplorer
 
 actor ControlledRepositoryProvider: GitHubRepositoryProviding {
-    func searchRepositories(query: String) async throws -> [GitHubExplorer.GitHubRepository] {
-        []
+    func searchRepositories(query: String) async throws -> GitHubSearchResponse {
+        GitHubSearchResponse(totalCount: 0, items: [])
     }
     
 

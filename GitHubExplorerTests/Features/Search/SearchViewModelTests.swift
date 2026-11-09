@@ -4,11 +4,11 @@ import Testing
 
 nonisolated struct MockSearchRepositoryProvider: GitHubRepositoryProviding {
 
-    let result: Result<[GitHubRepository], Error>
+    let result: Result<GitHubSearchResponse, Error>
 
     func searchRepositories(
         query: String
-    ) async throws -> [GitHubRepository] {
+    ) async throws -> GitHubSearchResponse {
         try result.get()
     }
 
@@ -33,7 +33,7 @@ struct SearchViewModelTests {
         )
 
         let provider = MockSearchRepositoryProvider(
-            result: .success([repository])
+            result: .success(GitHubSearchResponse(totalCount: 42, items: [repository]))
         )
 
         let viewModel = SearchViewModel(
@@ -43,6 +43,7 @@ struct SearchViewModelTests {
         await viewModel.search(query: "swift")
 
         #expect(viewModel.repositories.count == 1)
+        #expect(viewModel.totalCount == 42)
         #expect(viewModel.repositories.first?.name == "swift")
         #expect(viewModel.isLoading == false)
         #expect(viewModel.errorMessage == nil)
@@ -61,6 +62,7 @@ struct SearchViewModelTests {
         await viewModel.search(query: "swift")
 
         #expect(viewModel.repositories.isEmpty)
+        #expect(viewModel.totalCount == 0)
         #expect(viewModel.errorMessage != nil)
         #expect(viewModel.isLoading == false)
     }
@@ -75,7 +77,7 @@ struct SearchViewModelTests {
         )
 
         let provider = MockSearchRepositoryProvider(
-            result: .success([repository])
+            result: .success(GitHubSearchResponse(totalCount: 42, items: [repository]))
         )
 
         let viewModel = SearchViewModel(
@@ -85,6 +87,7 @@ struct SearchViewModelTests {
         await viewModel.search(query: "swift")
         await viewModel.search(query: "   ")
 
+        #expect(viewModel.totalCount == 0)
         #expect(viewModel.repositories.isEmpty)
         #expect(viewModel.errorMessage == nil)
         #expect(viewModel.isLoading == false)
@@ -125,20 +128,22 @@ struct SearchViewModelTests {
 
         await provider.complete(
             query: "swiftui",
-            with: [newRepository]
+            with: GitHubSearchResponse(totalCount: 20, items: [newRepository])
         )
 
         await secondTask.value
 
         #expect(viewModel.repositories.first?.id == 2)
+        #expect(viewModel.totalCount == 20)
 
         await provider.complete(
             query: "swift",
-            with: [oldRepository]
+            with: GitHubSearchResponse(totalCount: 100, items: [oldRepository])
         )
 
         await firstTask.value
 
+        #expect(viewModel.totalCount == 20)
         #expect(viewModel.repositories.first?.id == 2)
         #expect(viewModel.isLoading == false)
         #expect(viewModel.errorMessage == nil)
@@ -165,7 +170,7 @@ struct SearchViewModelTests {
 
         await provider.complete(
             query: "swift",
-            with: []
+            with: GitHubSearchResponse(totalCount: 0, items: [])
         )
 
         await firstTask.value
@@ -174,7 +179,7 @@ struct SearchViewModelTests {
 
         await provider.complete(
             query: "swiftui",
-            with: []
+            with: GitHubSearchResponse(totalCount: 0, items: [])
         )
 
         await secondTask.value

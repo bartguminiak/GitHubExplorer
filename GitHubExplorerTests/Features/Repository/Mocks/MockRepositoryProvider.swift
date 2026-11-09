@@ -12,7 +12,7 @@ nonisolated struct MockRepositoryProvider: GitHubRepositoryProviding {
         try result.get()
     }
     
-    func searchRepositories(query: String) async throws -> [GitHubRepository] {
-        []
+    func searchRepositories(query: String) async throws -> GitHubSearchResponse {
+        GitHubSearchResponse(totalCount: 0, items: [])
     }
 }

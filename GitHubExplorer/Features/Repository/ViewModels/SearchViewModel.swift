@@ -6,6 +6,7 @@ import Observation
 final class SearchViewModel {
 
     private(set) var repositories: [GitHubRepository] = []
+    private(set) var totalCount = 0
     private(set) var isLoading = false
     private(set) var errorMessage: String?
 
@@ -26,6 +27,7 @@ final class SearchViewModel {
 
         guard !query.isEmpty else {
             repositories = []
+            totalCount = 0
             errorMessage = nil
             isLoading = false
             return
@@ -50,7 +52,8 @@ final class SearchViewModel {
                 return
             }
             
-            repositories = result
+            repositories = result.items
+            totalCount = result.totalCount
         } catch {
             guard latestRequestID == requestID else {
                 return

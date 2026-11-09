@@ -118,5 +118,7 @@ private nonisolated struct CancellingProvider: GitHubRepositoryProviding {
         throw URLError(.cancelled)
     }
 
-    func searchRepositories(query: String) async throws -> [GitHubRepository] { [] }
+    func searchRepositories(query: String) async throws -> GitHubSearchResponse {
+        GitHubSearchResponse(totalCount: 0, items: [])
+    }
 }

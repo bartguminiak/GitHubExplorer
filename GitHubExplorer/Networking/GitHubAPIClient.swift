@@ -39,7 +39,7 @@ nonisolated struct GitHubAPIClient: Sendable {
     
     func searchRepositories(
         query: String
-    ) async throws -> [GitHubRepository] {
+    ) async throws -> GitHubSearchResponse {
         
         var components = URLComponents(
             string: "https://api.github.com/search/repositories"
@@ -69,6 +69,6 @@ nonisolated struct GitHubAPIClient: Sendable {
             from: data
         )
         
-        return searchResponse.items
+        return searchResponse
     }
 }

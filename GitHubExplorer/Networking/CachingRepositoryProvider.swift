@@ -58,7 +58,7 @@ actor CachingRepositoryProvider: GitHubRepositoryProviding {
 
     func searchRepositories(
         query: String
-    ) async throws -> [GitHubRepository] {
+    ) async throws -> GitHubSearchResponse {
         try await wrapped.searchRepositories(query: query)
     }
 

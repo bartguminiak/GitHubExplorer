@@ -4,7 +4,7 @@ import Foundation
 actor ControlledSearchRepositoryProvider: GitHubRepositoryProviding {
 
     private var pending: [
-        String: CheckedContinuation<[GitHubRepository], Error>
+        String: CheckedContinuation<GitHubSearchResponse, Error>
     ] = [:]
 
     private var waiters: [
@@ -13,7 +13,7 @@ actor ControlledSearchRepositoryProvider: GitHubRepositoryProviding {
 
     func searchRepositories(
         query: String
-    ) async throws -> [GitHubRepository] {
+    ) async throws -> GitHubSearchResponse {
         try await withCheckedThrowingContinuation { continuation in
             pending[query] = continuation
 
@@ -39,7 +39,7 @@ actor ControlledSearchRepositoryProvider: GitHubRepositoryProviding {
 
     func complete(
         query: String,
-        with repositories: [GitHubRepository]
+        with response: GitHubSearchResponse
     ) {
         guard let continuation = pending.removeValue(
             forKey: query
@@ -47,7 +47,7 @@ actor ControlledSearchRepositoryProvider: GitHubRepositoryProviding {
             preconditionFailure("No pending request: \(query)")
         }
 
-        continuation.resume(returning: repositories)
+        continuation.resume(returning: response)
     }
 
     func fail(

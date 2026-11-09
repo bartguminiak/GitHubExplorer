@@ -65,8 +65,8 @@ actor CountingRepositoryProvider: GitHubRepositoryProviding {
 
     func searchRepositories(
         query: String
-    ) async throws -> [GitHubRepository] {
-        []
+    ) async throws -> GitHubSearchResponse {
+        GitHubSearchResponse(totalCount: 0, items: [])
     }
 
 }
@@ -79,5 +79,7 @@ private actor UpdatingRepositoryProvider: GitHubRepositoryProviding {
         return GitHubRepository(id: 1, name: name, fullName: "\(owner)/\(name)", stars: count)
     }
 
-    func searchRepositories(query: String) async throws -> [GitHubRepository] { [] }
+    func searchRepositories(query: String) async throws -> GitHubSearchResponse {
+        GitHubSearchResponse(totalCount: 0, items: [])
+    }
 }

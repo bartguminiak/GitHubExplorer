@@ -8,7 +8,7 @@ nonisolated protocol GitHubRepositoryProviding: Sendable {
     
     func searchRepositories(
         query: String
-    ) async throws -> [GitHubRepository]
+    ) async throws -> GitHubSearchResponse
 }
 
 extension GitHubAPIClient: GitHubRepositoryProviding {}
