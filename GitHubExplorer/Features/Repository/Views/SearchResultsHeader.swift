@@ -5,7 +5,7 @@ struct SearchResultsHeader: View {
     let totalCount: Int
 
     var body: some View {
-        Text("Results: \(totalCount, format: .number)")
+        Text("Showing \(min(totalCount, 20)) of \(totalCount, format: .number) results")
             .font(.subheadline)
             .foregroundStyle(.secondary)
     }
