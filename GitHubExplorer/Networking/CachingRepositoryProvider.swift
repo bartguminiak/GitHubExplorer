@@ -8,14 +8,17 @@ actor CachingRepositoryProvider: GitHubRepositoryProviding {
 
     private let wrapped: any GitHubRepositoryProviding
     private let cacheLifetime: TimeInterval
+    private let now: @Sendable () -> Date
     private var cache: [String: CacheEntry] = [:]
 
     init(
         wrapping provider: any GitHubRepositoryProviding,
-        cacheLifetime: TimeInterval = 60
+        cacheLifetime: TimeInterval = 60,
+        now: @escaping @Sendable () -> Date = { Date.now }
     ) {
         self.wrapped = provider
         self.cacheLifetime = cacheLifetime
+        self.now = now
     }
 
     func fetchRepository(
@@ -26,7 +29,7 @@ actor CachingRepositoryProvider: GitHubRepositoryProviding {
 
         let key = "\(owner.lowercased())/\(name.lowercased())"
 
-        if let entry = cache[key], entry.expiresAt > Date() {
+        if let entry = cache[key], entry.expiresAt > now() {
             return entry.repository
         }
         cache[key] = nil
@@ -37,7 +40,7 @@ actor CachingRepositoryProvider: GitHubRepositoryProviding {
 
         cache[key] = CacheEntry(
             repository: repository,
-            expiresAt: Date().addingTimeInterval(cacheLifetime)
+            expiresAt: now().addingTimeInterval(cacheLifetime)
         )
         return repository
     }
