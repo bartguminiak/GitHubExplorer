@@ -7,7 +7,7 @@ final class RepositoryViewModel {
 
     private(set) var repository: GitHubRepository?
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    private(set) var failure: RepositoryFailure?
 
     @ObservationIgnored
     private let repositoryProvider: any GitHubRepositoryProviding
@@ -24,7 +24,7 @@ final class RepositoryViewModel {
         latestRequestID = requestID
 
         isLoading = true
-        errorMessage = nil
+        failure = nil
 
         defer {
             if latestRequestID == requestID {
@@ -54,7 +54,7 @@ final class RepositoryViewModel {
                 return
             }
 
-            errorMessage = error.localizedDescription
+            failure = RepositoryFailure(error: error, isDetail: true)
         }
     }
 }

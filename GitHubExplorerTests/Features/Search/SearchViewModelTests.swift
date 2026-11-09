@@ -46,7 +46,7 @@ struct SearchViewModelTests {
         #expect(viewModel.totalCount == 42)
         #expect(viewModel.repositories.first?.name == "swift")
         #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.failure == nil)
     }
 
     @Test
@@ -63,7 +63,7 @@ struct SearchViewModelTests {
 
         #expect(viewModel.repositories.isEmpty)
         #expect(viewModel.totalCount == 0)
-        #expect(viewModel.errorMessage != nil)
+        #expect(viewModel.failure != nil)
         #expect(viewModel.isLoading == false)
     }
 
@@ -89,7 +89,7 @@ struct SearchViewModelTests {
 
         #expect(viewModel.totalCount == 0)
         #expect(viewModel.repositories.isEmpty)
-        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.failure == nil)
         #expect(viewModel.isLoading == false)
     }
     
@@ -146,7 +146,7 @@ struct SearchViewModelTests {
         #expect(viewModel.totalCount == 20)
         #expect(viewModel.repositories.first?.id == 2)
         #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.failure == nil)
     }
     
     @Test
@@ -209,7 +209,7 @@ struct SearchViewModelTests {
 
         await task.value
 
-        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.failure == nil)
         #expect(viewModel.isLoading == false)
     }
     

@@ -128,7 +128,7 @@ The tests use mock networking components and do not require live GitHub API acce
 
 ## Known Limitations
 
-- Search error handling and user-facing error messages need refinement.
+- Search and detail failures offer manual retry where appropriate; automatic retry and detailed rate-limit response handling are not implemented.
 - GitHub API rate limits may affect unauthenticated requests.
 - Search returns only the first page of up to 20 repositories; pagination is not implemented. The API's total result count and incomplete-results flag are decoded but are not exposed to the UI.
 - Concurrent cache misses are not deduplicated and may issue separate requests for the same repository.

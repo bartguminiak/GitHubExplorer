@@ -12,7 +12,7 @@ struct RepositoryViewModelTests {
             await model.loadRepository(owner: "swiftlang", name: "swift")
         }
         await task.value
-        #expect(model.errorMessage == nil)
+        #expect(model.failure == nil)
         #expect(model.isLoading == false)
         #expect(model.repository == nil)
     }
@@ -39,7 +39,7 @@ struct RepositoryViewModelTests {
         #expect(viewModel.repository?.id == 123)
         #expect(viewModel.repository?.name == "swift")
         #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage == nil)
+        #expect(viewModel.failure == nil)
     }
     
     @Test
@@ -58,7 +58,7 @@ struct RepositoryViewModelTests {
         
         #expect(viewModel.repository == nil)
         #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage != nil)
+        #expect(viewModel.failure != nil)
     }
     
     @Test

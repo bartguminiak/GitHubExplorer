@@ -18,17 +18,31 @@ struct SearchView: View {
 
     @State private var searchText = ""
 
+    @State private var retryAttempt = 0
+
+    private struct RequestID: Equatable {
+        let query: String
+        let attempt: Int
+    }
+
     var body: some View {
         NavigationStack {
             Group {
                 if viewModel.isLoading {
                     ProgressView("Searching...")
-                } else if let errorMessage = viewModel.errorMessage {
-                    ContentUnavailableView(
-                        "Search failed",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text(errorMessage)
-                    )
+                } else if let failure = viewModel.failure {
+                    ContentUnavailableView {
+                        Label("Search failed", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(failure.message)
+                    } actions: {
+                        if failure.allowsRetry {
+                            Button("Retry") {
+                                retryAttempt += 1
+                            }
+                            .accessibilityIdentifier("searchRetry")
+                        }
+                    }
                 } else if viewModel.repositories.isEmpty {
                     ContentUnavailableView.search(text: searchText)
                 } else {
@@ -63,7 +77,7 @@ struct SearchView: View {
                 text: $searchText,
                 prompt: "Search repositories"
             )
-            .task(id: searchText) {
+            .task(id: RequestID(query: searchText, attempt: retryAttempt)) {
                 let query = searchText.trimmingCharacters(
                     in: .whitespacesAndNewlines
                 )
@@ -77,7 +91,7 @@ struct SearchView: View {
                     try await Task.sleep(for: .milliseconds(350))
                     try Task.checkCancellation()
 
-                    await viewModel.search(query: searchText)
+                    await viewModel.search(query: query)
                 } catch is CancellationError {
                     return
                 } catch {

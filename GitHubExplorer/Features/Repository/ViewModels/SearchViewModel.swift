@@ -8,7 +8,7 @@ final class SearchViewModel {
     private(set) var repositories: [GitHubRepository] = []
     private(set) var totalCount = 0
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    private(set) var failure: RepositoryFailure?
 
     @ObservationIgnored
     private let repositoryProvider: any GitHubRepositoryProviding
@@ -28,13 +28,13 @@ final class SearchViewModel {
         guard !query.isEmpty else {
             repositories = []
             totalCount = 0
-            errorMessage = nil
+            failure = nil
             isLoading = false
             return
         }
 
         isLoading = true
-        errorMessage = nil
+        failure = nil
 
         defer {
             if latestRequestID == requestID {
@@ -54,6 +54,8 @@ final class SearchViewModel {
             
             repositories = result.items
             totalCount = result.totalCount
+        } catch is CancellationError {
+            return
         } catch {
             guard latestRequestID == requestID else {
                 return
@@ -63,7 +65,7 @@ final class SearchViewModel {
                 return
             }
             
-            errorMessage = error.localizedDescription
+            failure = RepositoryFailure(error: error, isDetail: false)
         }
     }
     

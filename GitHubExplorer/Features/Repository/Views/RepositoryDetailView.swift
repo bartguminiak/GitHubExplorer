@@ -22,16 +22,31 @@ struct RepositoryDetailView: View {
 
     @State private var viewModel: RepositoryViewModel
 
+    @State private var retryAttempt = 0
+
+    private struct RequestID: Equatable {
+        let owner: String
+        let name: String
+        let attempt: Int
+    }
+
     var body: some View {
         Group {
             if viewModel.isLoading {
                 ProgressView("Loading repository...")
-            } else if let errorMessage = viewModel.errorMessage {
-                ContentUnavailableView(
-                    "Failed to load repository",
-                    systemImage: "exclamationmark.triangle",
-                    description: Text(errorMessage)
-                )
+            } else if let failure = viewModel.failure {
+                ContentUnavailableView {
+                    Label("Failed to load repository", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(failure.message)
+                } actions: {
+                    if failure.allowsRetry {
+                        Button("Retry") {
+                            retryAttempt += 1
+                        }
+                        .accessibilityIdentifier("detailRetry")
+                    }
+                }
             } else if let repository = viewModel.repository {
                 List {
                     LabeledContent("Name", value: repository.name)
@@ -49,7 +64,7 @@ struct RepositoryDetailView: View {
             }
         }
         .navigationTitle(name)
-        .task(id: "\(owner)/\(name)") {
+        .task(id: RequestID(owner: owner, name: name, attempt: retryAttempt)) {
             await viewModel.loadRepository(
                 owner: owner,
                 name: name
