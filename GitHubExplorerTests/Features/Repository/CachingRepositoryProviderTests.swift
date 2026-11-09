@@ -6,26 +6,6 @@ import Testing
 struct CachingRepositoryProviderTests {
 
     @Test
-    func expiredEntryFetchesUpdatedRepository() async throws {
-        let provider = UpdatingRepositoryProvider()
-        let clock = CacheTestClock()
-        let cache = CachingRepositoryProvider(wrapping: provider, now: { clock.now })
-
-        let first = try await cache.fetchRepository(owner: "apple", name: "swift")
-        clock.advance(by: 59)
-        let beforeExpiration = try await cache.fetchRepository(owner: "apple", name: "swift")
-        #expect(beforeExpiration.stars == first.stars)
-
-        clock.advance(by: 1)
-        let second = try await cache.fetchRepository(owner: "apple", name: "swift")
-        clock.advance(by: 59)
-        let refreshed = try await cache.fetchRepository(owner: "apple", name: "swift")
-        #expect(refreshed.stars == second.stars)
-        #expect(first.stars == 1)
-        #expect(second.stars == 2)
-    }
-
-    @Test
     func returnsCachedRepository() async throws {
         let repository = GitHubRepository(
             id: 1,
@@ -349,33 +329,6 @@ extension CachingRepositoryProviderTests {
     }
 
     @Test
-    func lifetimeStartsWhenFetchCompletes() async throws {
-        let clock = CacheTestClock()
-        let provider = ControlledCacheProvider()
-        let cache = CachingRepositoryProvider(wrapping: provider, now: { clock.now })
-        let task = Task {
-            try await cache.fetchRepository(owner: "apple", name: "swift")
-        }
-        await provider.waitUntilRequested(0)
-        clock.advance(by: 120)
-        await provider.complete(0, stars: 100)
-        _ = try await task.value
-
-        clock.advance(by: 59)
-        let cached = try await cache.fetchRepository(owner: "apple", name: "swift")
-        #expect(cached.stars == 100)
-        #expect(await provider.fetchCount == 1)
-
-        clock.advance(by: 2)
-        let refresh = Task {
-            try await cache.fetchRepository(owner: "apple", name: "swift")
-        }
-        await provider.waitUntilRequested(1)
-        await provider.complete(1, stars: 200)
-        #expect(try await refresh.value.stars == 200)
-    }
-
-    @Test
     func searchForwardsQueryAndBypassesDetailCache() async throws {
         let provider = RecordingSearchProvider()
         let cache = CachingRepositoryProvider(wrapping: provider)
@@ -389,25 +342,6 @@ extension CachingRepositoryProviderTests {
         #expect(detail.stars == 300)
         #expect(await provider.detailFetchCount == 1)
         #expect(await provider.queries == [" swift language:swift ", " swift language:swift "])
-    }
-}
-
-// All mutable state is protected by the lock, including reads from the
-// Sendable time-source closure running on the cache actor.
-private nonisolated final class CacheTestClock: @unchecked Sendable {
-    private let lock = NSLock()
-    private var date = Date(timeIntervalSince1970: 0)
-
-    var now: Date {
-        lock.lock()
-        defer { lock.unlock() }
-        return date
-    }
-
-    func advance(by interval: TimeInterval) {
-        lock.lock()
-        defer { lock.unlock() }
-        date = date.addingTimeInterval(interval)
     }
 }
 
@@ -426,5 +360,53 @@ private actor RecordingSearchProvider: GitHubRepositoryProviding {
             totalCount: queries.count,
             items: [GitHubRepository(id: 1, name: "swift", fullName: "apple/swift", stars: 100)]
         )
+    }
+}
+
+extension CachingRepositoryProviderTests {
+    @Test
+    func evictedRepositoryIsFetchedAgain() async throws {
+        let provider = UpdatingRepositoryProvider()
+        let cache = CachingRepositoryProvider(wrapping: provider, capacity: 1)
+
+        let first = try await cache.fetchRepository(owner: "apple", name: "swift")
+        let second = try await cache.fetchRepository(owner: "apple", name: "swiftui")
+        let cached = try await cache.fetchRepository(owner: "apple", name: "swiftui")
+        #expect(cached.stars == second.stars)
+
+        let refetched = try await cache.fetchRepository(owner: "apple", name: "swift")
+        #expect(first.stars == 1)
+        #expect(refetched.stars == 3)
+    }
+
+    @Test
+    func concurrentCompletionsRespectCapacity() async throws {
+        let provider = ControlledCacheProvider()
+        let cache = CachingRepositoryProvider(wrapping: provider, capacity: 1)
+        let first = Task {
+            try await cache.fetchRepository(owner: "apple", name: "swift")
+        }
+        await provider.waitUntilRequested(0)
+        let second = Task {
+            try await cache.fetchRepository(owner: "apple", name: "swiftui")
+        }
+        await provider.waitUntilRequested(1)
+
+        await provider.complete(0, stars: 100)
+        _ = try await first.value
+        await provider.complete(1, stars: 200)
+        _ = try await second.value
+
+        let cached = try await cache.fetchRepository(owner: "apple", name: "swiftui")
+        #expect(cached.stars == 200)
+        #expect(await provider.fetchCount == 2)
+
+        let refetch = Task {
+            try await cache.fetchRepository(owner: "apple", name: "swift")
+        }
+        await provider.waitUntilRequested(2)
+        await provider.complete(2, stars: 300)
+        #expect(try await refetch.value.stars == 300)
+        #expect(await provider.fetchCount == 3)
     }
 }

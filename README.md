@@ -70,7 +70,7 @@ Request identifiers help prevent older asynchronous responses from overwriting n
 
 ### Actor-Based Caching
 
-`CachingRepositoryProvider` uses an actor to isolate its in-memory cache. Repository details are cached for 60 seconds.
+`CachingRepositoryProvider` uses an actor to isolate its in-memory cache. Repository details are cached for this app session, with no time-based expiration. The cache holds at most 50 repositories by default; inserting a new repository at capacity evicts an arbitrary existing entry.
 
 Concurrent cache misses fetch independently in their callers' tasks, preserving cooperative cancellation. Canceling one caller does not affect another. The cache checks cancellation before returning a cached value and before storing a fetched response.
 
@@ -97,7 +97,7 @@ Tests cover:
 - Repository caching.
 - Batch fetching result and request counts.
 
-The current tests do not verify that batch requests overlap in time. Cancellation coverage applies to both search and repository ViewModels. Cache tests cover independent concurrent misses, cancellation reaching the wrapped provider, rejection of late canceled responses, cancellation on cache hits, and refetching expired entries.
+The current tests do not verify that batch requests overlap in time. Cancellation coverage applies to both search and repository ViewModels. Cache tests cover independent concurrent misses, cancellation reaching the wrapped provider, rejection of late canceled responses, cancellation on cache hits, eviction and refetching, and capacity enforcement across concurrent completions.
 
 Controlled continuations are used in concurrency tests to simulate asynchronous operations and verify their behavior without relying on arbitrary delays.
 
@@ -133,7 +133,7 @@ The tests use mock networking components and do not require live GitHub API acce
 - Search returns only the first page of up to 20 repositories; pagination is not implemented. The API's total result count and incomplete-results flag are decoded but are not exposed to the UI.
 - Concurrent cache misses are not deduplicated and may issue separate requests for the same repository.
 - Repository caching is in-memory only and does not persist across application launches.
-- Cached repository details expire after 60 seconds and are refreshed on the next fetch. Search bypasses this cache, so star counts can temporarily differ. Already displayed details do not update automatically.
+- Cached repository details may remain stale until eviction or app restart. Search bypasses this cache, so star counts can differ from cached details. Already displayed details do not update automatically.
 - Batch fetching is demonstrated at the networking layer and is not exposed as a separate UI feature.
 
 ## Project Goals

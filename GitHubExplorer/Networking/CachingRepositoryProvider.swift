@@ -1,24 +1,12 @@
-import Foundation
-
 actor CachingRepositoryProvider: GitHubRepositoryProviding {
-    private struct CacheEntry {
-        let repository: GitHubRepository
-        let expiresAt: Date
-    }
-
     private let wrapped: any GitHubRepositoryProviding
-    private let cacheLifetime: TimeInterval
-    private let now: @Sendable () -> Date
-    private var cache: [String: CacheEntry] = [:]
+    private let capacity: Int
+    private var cache: [String: GitHubRepository] = [:]
 
-    init(
-        wrapping provider: any GitHubRepositoryProviding,
-        cacheLifetime: TimeInterval = 60,
-        now: @escaping @Sendable () -> Date = { Date.now }
-    ) {
+    init(wrapping provider: any GitHubRepositoryProviding, capacity: Int = 50) {
+        precondition(capacity > 0, "Cache capacity must be positive")
         self.wrapped = provider
-        self.cacheLifetime = cacheLifetime
-        self.now = now
+        self.capacity = capacity
     }
 
     func fetchRepository(
@@ -28,20 +16,20 @@ actor CachingRepositoryProvider: GitHubRepositoryProviding {
         try Task.checkCancellation()
 
         let key = "\(owner.lowercased())/\(name.lowercased())"
-
-        if let entry = cache[key], entry.expiresAt > now() {
-            return entry.repository
+        if let repository = cache[key] {
+            return repository
         }
-        cache[key] = nil
 
         // Concurrent misses fetch independently in their callers' tasks.
         let repository = try await wrapped.fetchRepository(owner: owner, name: name)
         try Task.checkCancellation()
 
-        cache[key] = CacheEntry(
-            repository: repository,
-            expiresAt: now().addingTimeInterval(cacheLifetime)
-        )
+        // Session cache: evict an arbitrary entry only when adding a new key.
+        // Check after awaiting because other fetches may have filled the cache.
+        if cache[key] == nil, cache.count >= capacity, let evictedKey = cache.keys.first {
+            cache.removeValue(forKey: evictedKey)
+        }
+        cache[key] = repository
         return repository
     }
 
