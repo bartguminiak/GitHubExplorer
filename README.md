@@ -2,7 +2,7 @@
 
 A lightweight iOS application built to explore **modern Swift Concurrency**, SwiftUI, and testable application architecture.
 
-The project demonstrates practical concurrency patterns, including actor isolation, structured concurrency, task cancellation, request deduplication, and asynchronous networking.
+The project demonstrates practical concurrency patterns, including actor isolation, structured concurrency, task cancellation, and asynchronous networking.
 
 > **Project status:** Work in progress. This is a learning and technical demonstration project, not a production-ready GitHub client.
 
@@ -14,7 +14,6 @@ The project demonstrates practical concurrency patterns, including actor isolati
 - Cancellation-aware asynchronous operations.
 - Protection against outdated search responses.
 - In-memory repository caching using Swift actors.
-- Deduplication of concurrent repository detail requests.
 - Concurrent batch fetching using `TaskGroup`.
 - Loading, empty, and error states.
 
@@ -71,11 +70,11 @@ Request identifiers help prevent older asynchronous responses from overwriting n
 
 ### Actor-Based Caching
 
-`CachingRepositoryProvider` uses an actor to isolate its in-memory cache and track ongoing requests.
+`CachingRepositoryProvider` uses an actor to isolate its in-memory cache. Repository details are cached for 60 seconds.
 
-Concurrent requests for the same repository can share an in-flight operation rather than always initiating separate HTTP requests.
+Concurrent cache misses fetch independently in their callers' tasks, preserving cooperative cancellation. Canceling one caller does not affect another. The cache checks cancellation before returning a cached value and before storing a fetched response.
 
-The current implementation is intentionally lightweight; complete shared-request cancellation management remains outside its scope.
+The last successful, non-canceled completion updates the cache. A wrapped provider that ignores cancellation may continue running, but its canceled caller's response is rejected and is not cached.
 
 ### Structured Concurrency
 
@@ -98,7 +97,7 @@ Tests cover:
 - Repository caching.
 - Batch fetching result and request counts.
 
-The current tests do not verify that batch requests overlap in time or that concurrent detail requests share an in-flight operation. Cancellation coverage applies to both search and repository ViewModels. Tests also cover loading arguments and refetching expired cache entries.
+The current tests do not verify that batch requests overlap in time. Cancellation coverage applies to both search and repository ViewModels. Cache tests cover independent concurrent misses, cancellation reaching the wrapped provider, rejection of late canceled responses, cancellation on cache hits, and refetching expired entries.
 
 Controlled continuations are used in concurrency tests to simulate asynchronous operations and verify their behavior without relying on arbitrary delays.
 
@@ -132,7 +131,7 @@ The tests use mock networking components and do not require live GitHub API acce
 - Search error handling and user-facing error messages need refinement.
 - GitHub API rate limits may affect unauthenticated requests.
 - Search returns only the first page of up to 20 repositories; pagination is not implemented. The API's total result count and incomplete-results flag are decoded but are not exposed to the UI.
-- Shared in-flight request cancellation is not fully implemented.
+- Concurrent cache misses are not deduplicated and may issue separate requests for the same repository.
 - Repository caching is in-memory only and does not persist across application launches.
 - Cached repository details expire after 60 seconds and are refreshed on the next fetch. Search bypasses this cache, so star counts can temporarily differ. Already displayed details do not update automatically.
 - Batch fetching is demonstrated at the networking layer and is not exposed as a separate UI feature.
